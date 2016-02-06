@@ -20,10 +20,11 @@ _start:
 	# setup stack
 	movl $stack, %esp
 
-	# push multiboot struct
-	pushl %eax
 	# push multiboot magic
 	pushl %ebx
+
+	# push multiboot struct
+	pushl %eax
 
 	call multiboot_loader
 cycle:

@@ -14,5 +14,5 @@ void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 
 	terminal_printf("Multiboot struct: 0x%p; magic: 0x%p\n", pMultiboot, uMagic);
 	terminal_printf("Packed kernel start: 0x%p; size: %u\n",
-		&__PACKED_KERNEL_START, __PACKED_KERNEL_START - __PACKED_KERNEL_END);
+		__PACKED_KERNEL_START, __PACKED_KERNEL_END - __PACKED_KERNEL_START);
 }
