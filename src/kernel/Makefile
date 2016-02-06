@@ -1,0 +1,7 @@
+.PHONY: clean
+
+$(OUTPUT_FILE):
+	echo "YES_THIS_IS_DUMMY_64_BIT_KERNEL_FOR_TESTING" >$(OUTPUT_FILE)
+
+clean:
+	
