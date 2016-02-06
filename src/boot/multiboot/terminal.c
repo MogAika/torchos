@@ -46,9 +46,12 @@ void terminal_putchar(char c) {
 	if (++terminal_column == VGA_WIDTH || c == '\n') {
 		terminal_column = 0;
 		if (++terminal_row == VGA_HEIGHT) {
-			//terminal_row = 0;
-			for(size_t i = 0; i < VGA_HEIGHT - 1; i++) {
-				terminal_buffer[i] = terminal_buffer[i+1];
+			for (size_t i = 0; i < VGA_HEIGHT - 1; i++) {
+				for (size_t j = 0; j < VGA_WIDTH; j++)
+					terminal_buffer[i * VGA_WIDTH + j] = terminal_buffer[(i+1) * VGA_WIDTH + j];
+			}
+			for (size_t j = 0; j < VGA_WIDTH; j++) {
+				terminal_buffer[(VGA_HEIGHT-1) * VGA_WIDTH + j] = make_vgaentry(' ', terminal_color);
 			}
 			terminal_row--;
 		}
