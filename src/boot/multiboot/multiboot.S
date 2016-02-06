@@ -18,7 +18,7 @@
 .type _start , @function
 _start:
 	# setup stack
-	movl (stack + BOOT_STACK_SIZE), %esp
+	movl $stack, %esp
 
 	# push multiboot struct
 	pushl %eax
@@ -33,5 +33,5 @@ cycle:
 
 .section .bss, "aw", @nobits
 .align 16
-stack:
 .skip BOOT_STACK_SIZE
+stack:
