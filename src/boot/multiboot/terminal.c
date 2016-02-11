@@ -1,7 +1,8 @@
 #include <stdarg.h>
+#include <stdint.h>
 
 #include <boot/multiboot/terminal.h>
-#include <stdlib.h>
+#include <boot/multiboot/minilib.h>
  
 uint8_t make_color(enum vga_color fg, enum vga_color bg) {
 	return fg | bg << 4;

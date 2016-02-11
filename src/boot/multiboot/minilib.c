@@ -1,10 +1,7 @@
-#ifndef STDLIB_H
-#define STDLIB_H 1
-
 #include <stddef.h>
 #include <stdbool.h>
 
-#define swap(a,b) {typeof(a) t=a;a=b;b=t;}
+#include <boot/multiboot/minilib.h>
 
 size_t strlen(const char* str) {
 	size_t size = 0;
@@ -57,5 +54,3 @@ char *utoa_s(unsigned value, char* buffer, size_t bufsize, unsigned radix) {
 char *utoa(unsigned value, char* buffer, int radix) {
 	return utoa_s(value, buffer, 256, radix);
 }
-
-#endif

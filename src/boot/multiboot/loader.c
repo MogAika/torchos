@@ -1,6 +1,9 @@
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
+#include <cpuid.h>
 
+#include <boot/multiboot/minilib.h>
 #include <boot/multiboot/multiboot.h>
 #include <boot/multiboot/terminal.h>
 
@@ -44,6 +47,28 @@ bool init() {
 	terminal_setcolor(make_color(FGCOLOR, BGCOLOR));
 	terminal_printf(" kernel loader\n");
 	return true;
+}
+
+bool process_cpu_features() {
+	uint32_t cpuidmax = __get_cpuid_max(0, 0);
+	bool have_cpuid = cpuidmax != 0;
+
+	print_requirement("CPUID instruction", have_cpuid);
+	if (!have_cpuid)
+		return false;
+
+	uint32_t a, b, c, d;
+	uint32_t cpuidext = __get_cpuid(0x80000001, &a, &b, &c, &d);
+	bool have_ext_cpuid = cpuidext != 0;
+	print_requirement("CPUID 0x80000001", have_ext_cpuid);
+	if (!have_ext_cpuid)
+		return false;
+
+	bool have_64bit = d & (1 << 29);
+	print_requirement("64 bit longmode support", have_64bit);
+	terminal_printf("cpuid[0x80000001] edx:%p ecx:%p\n", d, c);
+
+	return have_64bit;
 }
 
 bool process_multiboot(uint32_t uMagic, multiboot_info_t *pMultiboot) {
@@ -101,6 +126,10 @@ bool load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
 void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 	if (!init())
 		return;
+
+	if (!process_cpu_features())
+		return;
+
 
 	if (!process_multiboot(uMagic, pMultiboot))
 		return;
