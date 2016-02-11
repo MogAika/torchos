@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <boot/multiboot/multiboot.h>
 #include <boot/multiboot/terminal.h>
@@ -6,32 +7,73 @@
 extern uint8_t __PACKED_KERNEL_START[];
 extern uint8_t __PACKED_KERNEL_END[];
 
-void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
+#define FGCOLOR COLOR_WHITE
+#define BGCOLOR COLOR_BLACK
+
+void print_requirement(const char *text, bool have) {
+	terminal_setcolor(make_color(FGCOLOR, BGCOLOR));
+	terminal_printf(" - %s ", text);
+
+	size_t textlen = strlen(text);
+	for (size_t pneed = textlen; pneed < 32; pneed++) {
+		terminal_putchar('.');
+	}
+
+	terminal_putchar('[');
+	if (have) {
+		terminal_setcolor(make_color(COLOR_GREEN, BGCOLOR));
+		terminal_writestring("OK");
+	} else {
+		terminal_setcolor(make_color(COLOR_RED, BGCOLOR));
+		terminal_writestring("FAIL");
+	}
+	terminal_setcolor(make_color(FGCOLOR, BGCOLOR));
+	terminal_writestring("]\n");
+}
+
+bool init() {
 	terminal_initialize();
 
-	terminal_setcolor(make_color(COLOR_WHITE, COLOR_BROWN));
+	terminal_setcolor(make_color(FGCOLOR, BGCOLOR));
 	terminal_clear();
 
-	terminal_printf("Multiboot struct: 0x%p; magic: 0x%p\n", pMultiboot, uMagic);
-	terminal_printf("Packed kernel start: 0x%p; size: %u\n",
-		__PACKED_KERNEL_START, __PACKED_KERNEL_END - __PACKED_KERNEL_START);
+	terminal_printf("Welcome to ");
+	terminal_setcolor(make_color(COLOR_MAGENTA, BGCOLOR));
+	terminal_printf("%s", __KERNEL_NAME);
 
-	if (uMagic != MULTIBOOT_BOOTLOADER_MAGIC) {
+	terminal_setcolor(make_color(FGCOLOR, BGCOLOR));
+	terminal_printf(" kernel loader\n");
+	return true;
+}
+
+bool process_multiboot(uint32_t uMagic, multiboot_info_t *pMultiboot) {
+	bool magic_match = uMagic == MULTIBOOT_BOOTLOADER_MAGIC;
+	print_requirement("Multiboot magic match", magic_match);
+	if (!magic_match) {
 		terminal_printf("Multiboot magic not correct 0x%p != 0x%p\n",
 			uMagic, MULTIBOOT_BOOTLOADER_MAGIC);
-		return;
+		return false;
 	}
 	
-	terminal_printf("Multiboot magic correct. Flags: 0x%p\n", pMultiboot->flags);
-	
-	if (pMultiboot->flags & MULTIBOOT_INFO_MEMORY) {
-		terminal_printf("mem_lower = %uKB, mem_upper = %uKB (%uMb)\n",
-			pMultiboot->mem_lower, pMultiboot->mem_upper, pMultiboot->mem_upper / 1024);
-	} else {
-		terminal_printf("Multiboot config not provide memory info\n");
+	bool have_meminfo = pMultiboot->flags & MULTIBOOT_INFO_MEMORY;
+	bool have_memmap = pMultiboot->flags & MULTIBOOT_INFO_MEM_MAP;
+
+	print_requirement("Multiboot memory info", have_meminfo);
+	print_requirement("Multiboot memory map", have_memmap);
+
+	terminal_printf("Multiboot struct: 0x%p; magic: 0x%p\n", pMultiboot, uMagic);
+
+	if (magic_match) {
+		terminal_printf("Multiboot magic correct. Flags: b%b\n", pMultiboot->flags);
 	}
 
-	if (pMultiboot->flags & MULTIBOOT_INFO_MEM_MAP) {
+	if (have_meminfo) {
+		terminal_printf("mem_lower = %uKB, mem_upper = %uKB (%uMb)\n",
+			pMultiboot->mem_lower, pMultiboot->mem_upper, pMultiboot->mem_upper / 1024);
+	} else
+		return false;
+
+	if (have_memmap) {
 		multiboot_memory_map_t *mmap = (multiboot_memory_map_t*)pMultiboot->mmap_addr;
 		uint32_t mmapEnd = pMultiboot->mmap_addr + pMultiboot->mmap_length;
 
@@ -39,13 +81,30 @@ void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 			pMultiboot->mmap_addr, pMultiboot->mmap_length);
 
 		while((uint32_t)mmap < mmapEnd) {
-			terminal_printf(" (0x%p[%u]) addr: 0x%x%x, len: 0x%x%x, type: 0x%x\n", mmap, mmap->size,
+			terminal_printf(" (0x%p[%u]) addr: 0x%p:%p, len: 0x%x:%x, type: 0x%x\n", mmap, mmap->size,
 				(uint32_t)(mmap->addr >> 32), (uint32_t)(mmap->addr & 0xffffffff),
 				(uint32_t)(mmap->len >> 32), (uint32_t)(mmap->len & 0xffffffff), mmap->type);
 
 			mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
 		}
-	} else {
-		terminal_printf("Multiboot config not provide memory map\n");
 	}
+
+	return true;
+}
+
+bool load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
+	terminal_printf("Packed kernel start: 0x%p; size: %u\n",
+		pack_start, pack_end - pack_start);
+	return true;
+}
+
+void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
+	if (!init())
+		return;
+
+	if (!process_multiboot(uMagic, pMultiboot))
+		return;
+
+	if (!load_kernel(__PACKED_KERNEL_START, __PACKED_KERNEL_END))
+		return;
 }

@@ -10,7 +10,8 @@ export CC=$(CROSS_COMPILER_PREFIX)gcc
 export AS=$(CROSS_COMPILER_PREFIX)as
 export LD=$(CROSS_COMPILER_PREFIX)ld
 
-export CFLAGS=-std=gnu99 -c -I $(INCLUDE_DIR) -ffreestanding -nostdlib -O2 -Wall -Wextra -fno-exceptions -Qn -fdata-sections -ffunction-sections -mtune=i386
+export EXTERNAL_DEFINITONS=-D__KERNEL_VERSION=\"$(VERSION)\" -D__KERNEL_NAME=\"$(KERNEL_NAME)\"
+export CFLAGS=-std=gnu99 -c -I $(INCLUDE_DIR) -ffreestanding -nostdlib -O2 -Wall -Wextra -fno-exceptions -Qn -fdata-sections -ffunction-sections -mtune=i386 $(EXTERNAL_DEFINITONS)
 export LDFLAGS=-s -nostdlib -O2 -I $(INCLUDE_DIR)
 export ASFLAGS=-I $(INCLUDE_DIR)
 

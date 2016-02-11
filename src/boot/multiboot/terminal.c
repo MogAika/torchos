@@ -75,12 +75,12 @@ void terminal_printf(const char* format, ...) {
 	va_list ap;
 	va_start(ap, format);
 	char c;
-	while((c = *format)) {
-		if(c == '%') {
+	while ((c = *format)) {
+		if (c == '%') {
 			c = *(++format);
-			const size_t intbuf_size = 31;
+			const size_t intbuf_size = 33;
 			char intbuf[intbuf_size];
-			switch(c) {
+			switch (c) {
 				case 'p':
 				case 'x':
 					terminal_writestring(utoa_s(va_arg(ap, unsigned), intbuf, intbuf_size, 16));
@@ -91,6 +91,9 @@ void terminal_printf(const char* format, ...) {
 				case 'd':
 					terminal_writestring(itoa_s(va_arg(ap, int), intbuf, intbuf_size, 10));
 					break;			
+				case 'b':
+					terminal_writestring(utoa_s(va_arg(ap, unsigned), intbuf, intbuf_size, 2));
+					break;
 				default:
 					terminal_putchar('%');
 				case '%':
@@ -101,7 +104,7 @@ void terminal_printf(const char* format, ...) {
 					terminal_writestring(va_arg(ap, const char*));
 					break;
 			}
-		} else 
+		} else
 			terminal_putchar(c);
 		format++;
 	}
