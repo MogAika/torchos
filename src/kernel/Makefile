@@ -1,14 +1,18 @@
 OUTPUT=$(OUTPUT_FILE)
 
-OBJECTS=main.o
+OBJECTS_CUSTOM=main.o
+OBJECTS=torchos.o
 
 .PHONY: clean
 
-$(OUTPUT): linker.ld $(OBJECTS) 
-	$(LD) $(LDFLAGS) -T $< -o $@ $(OBJECTS) --nmagic 
+$(OUTPUT): linker.ld $(OBJECTS) $(OBJECTS_CUSTOM)
+	$(LD) $(LDFLAGS) -T $< -o $@ $(OBJECTS) $(OBJECTS_CUSTOM) --nmagic 
+
+main.o: main.S
+	$(AS) $(ASFLAGS) -o $@ $<
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	$(RM) $(OBJECTS)
+	$(RM) $(OBJECTS) $(OBJECTS_CUSTOM)

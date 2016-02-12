@@ -17,7 +17,7 @@ export ASFLAGS=-I $(INCLUDE_DIR)
 
 KERNEL_FILE=$(BIN_DIR)/$(KERNEL_NAME).bin64
 
-.PHONY: all test kernel boot qemu clean
+.PHONY: all kernel boot clean
 
 all: kernel boot
 

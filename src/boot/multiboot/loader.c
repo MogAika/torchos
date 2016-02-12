@@ -6,8 +6,8 @@
 #include <boot/multiboot/minilib.h>
 #include <boot/multiboot/multiboot.h>
 #include <boot/multiboot/terminal.h>
-
 #include <boot/kernel_input.h>
+#include <elf64.h>
 
 extern uint8_t __PACKED_KERNEL_START[];
 extern uint8_t __PACKED_KERNEL_END[];

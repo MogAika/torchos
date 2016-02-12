@@ -8,7 +8,7 @@ _kernel_64start:
 	shl $32, %rax
 	add %rbx, %rax
 	mov %rax, %rsp
-#	call kernel_main
+	call kernel_main
 cycle:
 	cli
 	hlt
