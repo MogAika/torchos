@@ -7,6 +7,8 @@
 #include <boot/multiboot/multiboot.h>
 #include <boot/multiboot/terminal.h>
 
+#include <boot/kernel_input.h>
+
 extern uint8_t __PACKED_KERNEL_START[];
 extern uint8_t __PACKED_KERNEL_END[];
 
@@ -135,6 +137,5 @@ void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 	if (!process_multiboot(uMagic, pMultiboot))
 		return;
 
-	if (!load_kernel(__PACKED_KERNEL_START, __PACKED_KERNEL_END))
-		return;
+	load_kernel(__PACKED_KERNEL_START, __PACKED_KERNEL_END);
 }

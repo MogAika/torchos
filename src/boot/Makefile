@@ -1,3 +1,4 @@
+CFLAGS += -mtune=i386
 .PHONY: all multiboot clean
 
 all: multiboot

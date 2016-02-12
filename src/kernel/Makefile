@@ -1,7 +1,14 @@
+OUTPUT=$(OUTPUT_FILE)
+
+OBJECTS=main.o
+
 .PHONY: clean
 
-$(OUTPUT_FILE):
-	echo "YES_THIS_IS_DUMMY_64_BIT_KERNEL_FOR_TESTING" >$(OUTPUT_FILE)
+$(OUTPUT): linker.ld $(OBJECTS) 
+	$(LD) $(LDFLAGS) -T $< -o $@ $(OBJECTS) --nmagic 
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	
+	$(RM) $(OBJECTS)

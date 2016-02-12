@@ -2,6 +2,7 @@ ENTRY(_start)
 
 SECTIONS {
 	. = 1M;
+	__BOOT_IMAGE_START = .;
 
 	.text BLOCK(4K) : ALIGN(4K) {
 		*(.multiboot)
@@ -22,4 +23,6 @@ SECTIONS {
 	.bss BLOCK(4K) : ALIGN(4K) {
 		*(COMMON .bss .bss.*)
 	}
+
+	__BOOT_IMAGE_END = .;
 }
