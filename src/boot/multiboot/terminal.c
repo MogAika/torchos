@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <boot/multiboot/terminal.h>
 #include <boot/multiboot/minilib.h>
@@ -82,18 +83,31 @@ void terminal_printf(const char* format, ...) {
 			const size_t intbuf_size = 33;
 			char intbuf[intbuf_size];
 			switch (c) {
+				case 'l': {
+						uint32_t lo = va_arg(ap, uint32_t);
+						uint32_t hi = va_arg(ap, uint32_t);
+						
+						if (!hi) {
+							terminal_writestring(utoa_s(lo, intbuf, intbuf_size, 16));
+						} else {
+							terminal_writestring(utoa_s(hi, intbuf, intbuf_size, 16));
+							memset(intbuf, '0', 8);
+							utoa_s(lo, intbuf + 7, intbuf_size - 7, 16);
+							terminal_writestring(intbuf + strlen(intbuf + 8));
+						}
+					} break;
 				case 'p':
 				case 'x':
-					terminal_writestring(utoa_s(va_arg(ap, unsigned), intbuf, intbuf_size, 16));
+					terminal_writestring(utoa_s(va_arg(ap, uint32_t), intbuf, intbuf_size, 16));
 					break;
 				case 'u':
-					terminal_writestring(utoa_s(va_arg(ap, unsigned), intbuf, intbuf_size, 10));
+					terminal_writestring(utoa_s(va_arg(ap, uint32_t), intbuf, intbuf_size, 10));
 					break;
 				case 'd':
-					terminal_writestring(itoa_s(va_arg(ap, int), intbuf, intbuf_size, 10));
+					terminal_writestring(itoa_s(va_arg(ap, int32_t), intbuf, intbuf_size, 10));
 					break;			
 				case 'b':
-					terminal_writestring(utoa_s(va_arg(ap, unsigned), intbuf, intbuf_size, 2));
+					terminal_writestring(utoa_s(va_arg(ap, uint32_t), intbuf, intbuf_size, 2));
 					break;
 				default:
 					terminal_putchar('%');
