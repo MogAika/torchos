@@ -93,8 +93,10 @@ bool process_multiboot(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 	}
 
 	if (have_meminfo) {
-		terminal_printf("mem_lower = %uKB, mem_upper = %uKB (%uMb)\n",
-			pMultiboot->mem_lower, pMultiboot->mem_upper, pMultiboot->mem_upper / 1024);
+		uint32_t memtotal = pMultiboot->mem_upper ? (pMultiboot->mem_upper + 1024) : pMultiboot->mem_lower;
+		terminal_printf("mem_lower = %uKB, mem_upper = %uKB (%uMb), total: %uMb(%ukB)\n",
+			pMultiboot->mem_lower, pMultiboot->mem_upper, pMultiboot->mem_upper / 1024,
+			memtotal / 1024, memtotal);
 	} else
 		return false;
 
@@ -129,7 +131,6 @@ void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 
 	if (!process_cpu_features())
 		return;
-
 
 	if (!process_multiboot(uMagic, pMultiboot))
 		return;
