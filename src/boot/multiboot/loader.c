@@ -124,6 +124,12 @@ bool process_multiboot(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 bool load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
 	terminal_printf("Packed kernel start: 0x%p; size: %u\n",
 		pack_start, pack_end - pack_start);
+
+	Elf64_Ehdr_t* elf_ehdr = (Elf64_Ehdr_t*) pack_start;
+	terminal_printf("emtry: 0x%p:%p; phoff: 0x%p:%p\n",
+		(uint32_t)(elf_ehdr->e_entry >> 32), (uint32_t)(elf_ehdr->e_entry & 0xffffffff),
+		(uint32_t)(elf_ehdr->e_phoff >> 32), (uint32_t)(elf_ehdr->e_phoff & 0xffffffff));
+
 	return true;
 }
 
