@@ -111,9 +111,10 @@ void terminal_printf(const char* format, ...) {
 					break;
 				default:
 					terminal_putchar('%');
+					break;
 				case '%':
 				case 'c':
-					terminal_putchar(c);
+					terminal_putchar(va_arg(ap, int) & 0xff);
 					break;
 				case 's':
 					terminal_writestring(va_arg(ap, const char*));

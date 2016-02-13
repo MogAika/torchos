@@ -110,9 +110,8 @@ bool process_multiboot(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 			pMultiboot->mmap_addr, pMultiboot->mmap_length);
 
 		while((uint32_t)mmap < mmapEnd) {
-			terminal_printf(" (0x%p[%u]) addr: 0x%p:%p, len: 0x%x:%x, type: 0x%x\n", mmap, mmap->size,
-				(uint32_t)(mmap->addr >> 32), (uint32_t)(mmap->addr & 0xffffffff),
-				(uint32_t)(mmap->len >> 32), (uint32_t)(mmap->len & 0xffffffff), mmap->type);
+			terminal_printf(" (0x%p[%u]) addr: 0x%l, len: 0x%l, type: 0x%x\n",
+				mmap, mmap->size, mmap->addr, mmap->len, mmap->type);
 
 			mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
 		}
@@ -125,10 +124,21 @@ bool load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
 	terminal_printf("Packed kernel start: 0x%p; size: %u\n",
 		pack_start, pack_end - pack_start);
 
-	Elf64_Ehdr_t* elf_ehdr = (Elf64_Ehdr_t*) pack_start;
-	terminal_printf("emtry: 0x%p:%p; phoff: 0x%p:%p\n",
-		(uint32_t)(elf_ehdr->e_entry >> 32), (uint32_t)(elf_ehdr->e_entry & 0xffffffff),
-		(uint32_t)(elf_ehdr->e_phoff >> 32), (uint32_t)(elf_ehdr->e_phoff & 0xffffffff));
+	Elf64_Ehdr_t *ehdr = (Elf64_Ehdr_t*) pack_start;
+	terminal_printf("entry: 0x%l; phoff: 0x%l\n", ehdr->e_entry, ehdr->e_phoff);
+
+	Elf64_Phdr_t *phdr = (Elf64_Phdr_t*) (pack_start + ehdr->e_phoff);
+	for (int i = 0; i < ehdr->e_phnum; i++, phdr++) {
+		if (phdr->p_type != ELF64_PT_LOAD)
+			continue;
+
+		terminal_printf("+ section [%c%c%c]:0x%l[0x%l] va:0x%l[0x%l]\n", (phdr->p_flags & ELF64_PF_X) ? 'X' : '-',
+			(phdr->p_flags & ELF64_PF_W) ? 'W' : '-', (phdr->p_flags & ELF64_PF_R) ? 'R' : '-',
+			phdr->p_offset, phdr->p_filesz, phdr->p_vaddr, phdr->p_memsz);	
+
+
+
+	}
 
 	return true;
 }
