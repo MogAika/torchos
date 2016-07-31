@@ -1,7 +1,7 @@
 OUTPUT=$(BIN_DIR)/$(KERNEL_NAME)-multiboot.elf32
 
 OBJECTS_CUSTOM=kernel.o multiboot.o
-OBJECTS=loader.o terminal.o minilib.o
+OBJECTS=loader.o terminal.o minilib.o pagealloc.o
 
 .PHONY: clean
 

@@ -1,5 +1,5 @@
-#ifndef ELF64_HEADER_H
-#define ELF64_HEADER_H 1
+#ifndef _SPECS_ELF64_HEADER
+#define _SPECS_ELF64_HEADER 1
 
 typedef uint64_t Elf64_Addr_t;
 typedef uint64_t Elf64_Off_t;

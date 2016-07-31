@@ -1,5 +1,7 @@
 .code64
 
+.set BOOT_STACK_SIZE,   0x4000
+
 .section .text
 .align 8
 _kernel_64start:
@@ -13,3 +15,8 @@ cycle:
 	cli
 	hlt
 	jmp cycle
+
+.section .kernelstack, "aw", @nobits
+.align 16
+.skip BOOT_STACK_SIZE
+__kernel_stack:

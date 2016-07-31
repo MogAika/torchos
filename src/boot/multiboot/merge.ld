@@ -4,23 +4,23 @@ SECTIONS {
 	. = 1M;
 	__BOOT_IMAGE_START = .;
 
-	.text BLOCK(4K) : ALIGN(4K) {
+	.text : {
 		*(.multiboot)
 		*(.text .text.*)
 	}
 
-	.rodata BLOCK(4K) : ALIGN(4K) {
-		*(.rodata .rodata.* .gnu.linkonce.r.*)
-	}
-
-	.data BLOCK(4K) : ALIGN(4K) {
+	.rodata : {
 		__PACKED_KERNEL_START = .;
 		kernel.o(.data)
 		__PACKED_KERNEL_END = .;
+		*(.rodata .rodata.* .gnu.linkonce.r.*)
+	}
+
+	.data : {
 		*(.data .data.*)
 	}
 
-	.bss BLOCK(4K) : ALIGN(4K) {
+	.bss : {
 		*(COMMON .bss .bss.*)
 	}
 

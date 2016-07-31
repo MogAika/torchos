@@ -1,5 +1,5 @@
-#ifndef KERNEL_INPUT_HEADER_H
-#define KERNEL_INPUT_HEADER_H 1
+#ifndef _BOOT_KERNEL_INPUT_HEADER
+#define _BOOT_KERNEL_INPUT_HEADER 1
 
 typedef struct {
 	uint64_t size; // first bit - type, if 1, then can use, else cannot

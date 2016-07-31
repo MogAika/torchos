@@ -1,5 +1,5 @@
-#ifndef MINILIB_H
-#define MINILIB_H 1
+#ifndef _BOOT_MULTIBOOT_MINILIB_HEADER
+#define _BOOT_MULTIBOOT_MINILIB_HEADER 1
 
 #define swap(a,b) {typeof(a) t=a;a=b;b=t;}
 

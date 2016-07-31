@@ -1,6 +1,6 @@
 .code32
 
-.set BOOT_STACK_SIZE,   0x400
+.set BOOT_STACK_SIZE,   0x200
 
 .set MULTIBOOT_FLAGS,   0x00000003
 .set MULTIBOOT_MAGIC,   0x1BADB002
@@ -17,6 +17,8 @@
 .global _start
 .type _start , @function
 _start:
+	cli
+
 	# setup stack
 	movl $stack, %esp
 
@@ -31,6 +33,11 @@ cycle:
 	cli
 	hlt
 	jmp cycle
+
+.global _goto64
+.type _goto64, @function
+_goto64:
+	
 
 .section .bss, "aw", @nobits
 .align 16

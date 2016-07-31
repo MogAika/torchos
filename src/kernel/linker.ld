@@ -3,19 +3,24 @@ ENTRY(_kernel_64start)
 SECTIONS {
 	. = 0xffff800000000000;
 	
-	.text BLOCK(4K) : ALIGN(4K) {
+	.text : {
 		*(.text .text.*)
 	}
 
-	.rodata BLOCK(4K) : ALIGN(4K) {
+	.rodata : {
 		*(.rodata .rodata.* .gnu.linkonce.r.*)
 	}
 
-	.data BLOCK(4K) : ALIGN(4K) {
+	.data : {
 		*(.data .data.*)
 	}
 
-	.bss BLOCK(4K) : ALIGN(4K) {
+	.bss : {
 		*(COMMON .bss .bss.*)
+	}
+	
+	. = 0xffffffffffffc000;
+	.stack : {
+		*(.kernelstack)
 	}
 }

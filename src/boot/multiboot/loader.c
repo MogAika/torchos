@@ -6,14 +6,12 @@
 #include <boot/multiboot/minilib.h>
 #include <boot/multiboot/multiboot.h>
 #include <boot/multiboot/terminal.h>
+#include <boot/multiboot/pagealloc.h>
 #include <boot/kernel_input.h>
-#include <elf64.h>
+#include <specs/elf64.h>
 
 extern uint8_t __PACKED_KERNEL_START[];
 extern uint8_t __PACKED_KERNEL_END[];
-
-extern uint8_t __BOOT_IMAGE_START[];
-extern uint8_t __BOOT_IMAGE_END[];
 
 #define FGCOLOR COLOR_WHITE
 #define BGCOLOR COLOR_BLACK
@@ -39,7 +37,7 @@ void print_requirement(const char *text, bool have) {
 	terminal_writestring("]\n");
 }
 
-bool init() {
+bool init_screen() {
 	terminal_initialize();
 
 	terminal_setcolor(make_color(FGCOLOR, BGCOLOR));
@@ -50,7 +48,7 @@ bool init() {
 	terminal_printf("%s", __KERNEL_NAME);
 
 	terminal_setcolor(make_color(FGCOLOR, BGCOLOR));
-	terminal_printf(" kernel loader\n");
+	terminal_printf(" multiboot32 => kernel loader\n");
 	return true;
 }
 
@@ -129,74 +127,6 @@ bool process_multiboot(uint32_t uMagic, multiboot_info_t *pMultiboot,
 	return true;
 }
 
-multiboot_memory_map_t *gpPhysMapMultiboot;
-multiboot_memory_map_t *gpPhysMapMultibootStart;
-uint32_t guPhysMapMultibootEnd;
-uint32_t guPhysNextFree;
-void phys_alloc_init(multiboot_memory_map_t *mmap, uint32_t mmap_lenght) {
-	gpPhysMapMultibootStart = mmap;
-	gpPhysMapMultiboot = mmap;
-	guPhysMapMultibootEnd = ((uint32_t)gpPhysMapMultiboot) + mmap_lenght;
-
-	guPhysNextFree = ((uint32_t) &__BOOT_IMAGE_END + 4096 - 1) & (~(4096 - 1));
-}
-
-uint32_t phys_alloc_get(uint32_t count) {
-	if (!count || ((uint32_t) gpPhysMapMultiboot >= guPhysMapMultibootEnd) ||
-		((guPhysNextFree + count * 4096) < guPhysNextFree)) // if overflow
-		return 0;
-
-	while (1) {
-		// terminal_printf("$ guPhysNextFree %u > gpPhysMapMultiboot->addr %u\n",
-		//	guPhysNextFree / 4096, gpPhysMapMultiboot->addr / 4096);
-		if (guPhysNextFree > (uint32_t)gpPhysMapMultiboot->addr && gpPhysMapMultiboot->type == 1 &&
-			(uint32_t)(guPhysNextFree + count * 4096) < (uint32_t)(gpPhysMapMultiboot->addr + gpPhysMapMultiboot->len)) {
-			uint32_t result = guPhysNextFree;
-			guPhysNextFree += count * 4096;
-			return result;
-		}
-
-		gpPhysMapMultiboot = (multiboot_memory_map_t*)((uint32_t)gpPhysMapMultiboot +
-			gpPhysMapMultiboot->size + sizeof(gpPhysMapMultiboot->size));
-
-		if ((uint32_t)gpPhysMapMultiboot < guPhysMapMultibootEnd) {
-			if (guPhysNextFree < (uint32_t)gpPhysMapMultiboot->addr)
-				guPhysNextFree = gpPhysMapMultiboot->addr;
-		} else
-			break;
-	}
-	return 0;
-}
-
-uint32_t *phys_pages_map_alloc(uint32_t total_memory) {
-	uint32_t total_pages = (total_memory + (4096 / 1024) - 1) / (4096 / 1024);
-	uint32_t mem_for_map = (total_pages + 8 - 1) / 8;
-	uint32_t pages_for_map = (mem_for_map + 4096 - 1) / 4096;
-	
-	terminal_printf(" @ @ @ %s @ @ @\n", __func__);
-
-	terminal_printf(" @ Total mem:%uk(%uM+%uk) pages:%u\n",
-		total_memory, total_memory / 1024, total_memory % 1024, total_pages);
-	terminal_printf(" @ Phys map used mem:%uk+%ub pages:%u\n", mem_for_map / 1024, mem_for_map % 1024, pages_for_map);
-
-	uint32_t map = phys_alloc_get(pages_for_map);
-	if (!map) {
-		terminal_printf(" @ FATAL: CANNOT ALLOCATE %u PAGE(S)\n", pages_for_map);
-		return (uint32_t*)0;
-	}
-
-	terminal_printf(" @ Allocated pages from %u count %u\n", map / 4096, pages_for_map);
-	
-	
-	multiboot_memory_map_t *mmap = gpPhysMapMultibootStart;
-	while ((uint32_t)mmap < guPhysMapMultibootEnd) {
-		// TODO: fill bitmap
-
-		mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
-	}
-
-	return (uint32_t*) map;
-}
 
 bool load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
 	terminal_printf("Packed kernel start: 0x%p; size: %u\n",
@@ -204,7 +134,7 @@ bool load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
 
 	Elf64_Ehdr_t *ehdr = (Elf64_Ehdr_t*) pack_start;
 	terminal_printf("entry: 0x%l; phoff: 0x%l\n", ehdr->e_entry, ehdr->e_phoff);
-
+	
 	Elf64_Phdr_t *phdr = (Elf64_Phdr_t*) (pack_start + ehdr->e_phoff);
 	for (int i = 0; i < ehdr->e_phnum; i++, phdr++) {
 		if (phdr->p_type != ELF64_PT_LOAD)
@@ -213,9 +143,17 @@ bool load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
 		terminal_printf("+ section [%c%c%c]:0x%l[0x%l] va:0x%l[0x%l]\n", (phdr->p_flags & ELF64_PF_X) ? 'X' : '-',
 			(phdr->p_flags & ELF64_PF_W) ? 'W' : '-', (phdr->p_flags & ELF64_PF_R) ? 'R' : '-',
 			phdr->p_offset, phdr->p_filesz, phdr->p_vaddr, phdr->p_memsz);	
-
-
-
+		
+		for (uint64_t ppos = 0; ppos < phdr->p_memsz; ppos += PAGE_SIZE4) {
+			uint64_t vaddr = phdr->p_vaddr + ppos;
+			terminal_printf(" trying to alloc and map %l\n", vaddr);
+			
+			uint32_t pp = phys_alloc_to_virt4k(vaddr, !!(phdr->p_flags & ELF64_PF_W), !!(phdr->p_flags & ELF64_PF_X));
+			if (ppos < phdr->p_memsz) {
+				uint32_t csize = (phdr->p_memsz - ppos) > PAGE_SIZE4 ? PAGE_SIZE4 : (phdr->p_memsz - ppos);
+				memcpy((void*) pp, (void*)(pack_start + phdr->p_offset + ppos), csize);
+			}
+		}
 	}
 
 	return true;
@@ -225,7 +163,7 @@ void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 	uint32_t uPhysicalMemoryTotal, uMultibootMmapLenght;
 	multiboot_memory_map_t *pMultibootMmap;
 
-	if (!init())
+	if (!init_screen())
 		return;
 
 	if (!process_cpu_features())
@@ -236,11 +174,10 @@ void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 
 	phys_alloc_init(pMultibootMmap, uMultibootMmapLenght);
 	
-	uint32_t *pPhysPagesBitMap = phys_pages_map_alloc(uPhysicalMemoryTotal);
-	if (!pPhysPagesBitMap) {
-		terminal_printf("FATAL: Cannot alloc physical pages bitmap\n");
+	if (!virt_init())
 		return;
-	}
-
-	//load_kernel(__PACKED_KERNEL_START, __PACKED_KERNEL_END);
+	
+	phys_alloc_to_virt4k(0xffFFffFFffFFffFF, false, false);
+	
+	load_kernel(__PACKED_KERNEL_START, __PACKED_KERNEL_END);
 }
