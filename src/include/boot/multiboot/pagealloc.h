@@ -7,6 +7,8 @@ uint32_t phys_alloc_alloc(uint32_t count);
 
 bool virt_init();
 
+void virt_map(uint64_t virt_addr, uint32_t physaddr, bool write, bool execute);
+
 uint32_t phys_alloc_to_virt4k(uint64_t virt_addr, bool write, bool execute);
 
 #define PAGE_PRESENT (1<<0)
@@ -17,8 +19,10 @@ uint32_t phys_alloc_to_virt4k(uint64_t virt_addr, bool write, bool execute);
 #define PAGE_SIZE_BIT (1<<7)
 #define PAGE_GLOBAL_BIT (1<<8)
 
-#define PAGE_SIZE4 (1<<12)
-#define PAGE_MASK4 ((1<<9)-1)
+#define PAGE_SIZE (1<<12)
+#define PAGE_MASK (~(PAGE_SIZE-1))
+
+#define PAGE_MAP_INDEX_MASK ((1<<9)-1)
 
 
 

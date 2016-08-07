@@ -12,6 +12,7 @@
 
 extern uint8_t __PACKED_KERNEL_START[];
 extern uint8_t __PACKED_KERNEL_END[];
+extern void _goto64();
 
 #define FGCOLOR COLOR_WHITE
 #define BGCOLOR COLOR_BLACK
@@ -128,7 +129,7 @@ bool process_multiboot(uint32_t uMagic, multiboot_info_t *pMultiboot,
 }
 
 
-bool load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
+uint64_t load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
 	terminal_printf("Packed kernel start: 0x%p; size: %u\n",
 		pack_start, pack_end - pack_start);
 
@@ -144,13 +145,13 @@ bool load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
 			(phdr->p_flags & ELF64_PF_W) ? 'W' : '-', (phdr->p_flags & ELF64_PF_R) ? 'R' : '-',
 			phdr->p_offset, phdr->p_filesz, phdr->p_vaddr, phdr->p_memsz);	
 		
-		for (uint64_t ppos = 0; ppos < phdr->p_memsz; ppos += PAGE_SIZE4) {
+		for (uint64_t ppos = 0; ppos < phdr->p_memsz; ppos += PAGE_SIZE) {
 			uint64_t vaddr = phdr->p_vaddr + ppos;
 			terminal_printf(" trying to alloc and map %l\n", vaddr);
 			
 			uint32_t pp = phys_alloc_to_virt4k(vaddr, !!(phdr->p_flags & ELF64_PF_W), !!(phdr->p_flags & ELF64_PF_X));
 			if (ppos < phdr->p_memsz) {
-				uint32_t csize = (phdr->p_memsz - ppos) > PAGE_SIZE4 ? PAGE_SIZE4 : (phdr->p_memsz - ppos);
+				uint32_t csize = (phdr->p_memsz - ppos) > PAGE_SIZE ? PAGE_SIZE : (phdr->p_memsz - ppos);
 				memcpy((void*) pp, (void*)(pack_start + phdr->p_offset + ppos), csize);
 			}
 		}
@@ -177,7 +178,7 @@ void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 	if (!virt_init())
 		return;
 	
-	phys_alloc_to_virt4k(0xffFFffFFffFFffFF, false, false);
-	
 	load_kernel(__PACKED_KERNEL_START, __PACKED_KERNEL_END);
+	
+	_goto64();
 }
