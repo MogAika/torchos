@@ -52,6 +52,10 @@ _goto64:
 	bts $8, %eax
 	wrmsr
 	
+	# prepare arguments
+	mov 4(%esp), %edx
+	mov 8(%esp), %ecx
+	
 	# enable paging
 	mov %cr0, %eax
 	bts $31, %eax
@@ -63,6 +67,11 @@ _goto64:
 	
 .code64
 _goto64_64:
+	movl %edx, %r8d
+	shl $32, %rdx
+	or %rdx, %r8
+	hlt
+	jmp *%r8
 	hlt
 
 .section .data

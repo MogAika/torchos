@@ -12,7 +12,7 @@
 
 extern uint8_t __PACKED_KERNEL_START[];
 extern uint8_t __PACKED_KERNEL_END[];
-extern void _goto64();
+extern void _goto64(uint64_t entry);
 
 #define FGCOLOR COLOR_WHITE
 #define BGCOLOR COLOR_BLACK
@@ -157,7 +157,7 @@ uint64_t load_kernel(uint8_t *pack_start, uint8_t *pack_end) {
 		}
 	}
 
-	return true;
+	return ehdr->e_entry;
 }
 
 void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
@@ -178,7 +178,7 @@ void multiboot_loader(uint32_t uMagic, multiboot_info_t *pMultiboot) {
 	if (!virt_init())
 		return;
 	
-	load_kernel(__PACKED_KERNEL_START, __PACKED_KERNEL_END);
+	uint64_t entry = load_kernel(__PACKED_KERNEL_START, __PACKED_KERNEL_END);
 	
-	_goto64();
+	_goto64(entry);
 }
