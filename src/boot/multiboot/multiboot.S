@@ -6,6 +6,11 @@
 .set MULTIBOOT_MAGIC,   0x1BADB002
 .set MULTIBOOT_CHECKSUM, -(MULTIBOOT_MAGIC + MULTIBOOT_FLAGS)
 
+.set SEGMENT_32CODE, 0x8
+.set SEGMENT_32DATA, 0x10
+.set SEGMENT_64CODE, 0x18
+.set SEGMENT_64DATA, 0x20
+
 .align 4
 .section .multiboot
 .long MULTIBOOT_MAGIC
@@ -19,6 +24,17 @@
 _start:
 	cli
 
+	# use our GDT
+	lgdt (_gdt)
+	mov $SEGMENT_32DATA, %edx
+	mov %edx, %ds
+	mov %edx, %es
+	mov %edx, %fs
+	mov %edx, %gs
+	mov %edx, %ss
+
+	ljmp $SEGMENT_32CODE, $_gdt_apply
+_gdt_apply:
 	# setup stack
 	movl $stack, %esp
 
@@ -62,20 +78,25 @@ _goto64:
 	mov %eax, %cr0
 	
 	# jmp to 64 bit long mode
-	# TODO: IMPORTANT: MAKE OWN GDT IN 32 BIT. $8 only work in GRUB
-	ljmp $8, $	_goto64_64
+	ljmp $SEGMENT_64CODE, $_goto64_64
 	
 .code64
 _goto64_64:
-	movl %edx, %r8d
-	shl $32, %rdx
-	or %rdx, %r8
-	hlt
-	jmp *%r8
-	hlt
+	shl $32, %rcx
+	add %rcx, %rdx
+	jmp *%rdx
 
 .section .data
 .align 8
+_gdt_base:
+.quad 0x0000000000000000 # zero
+.quad 0x00CF9A000000FFFF # code segment
+.quad 0x00CF92000000FFFF # data segment
+.quad 0x002098000000FFFF # code segment
+.quad 0x000090000000FFFF # data segment
+_gdt:
+.word _gdt - _gdt_base - 1
+.long _gdt_base
 
 .section .bss, "aw", @nobits
 .align 16

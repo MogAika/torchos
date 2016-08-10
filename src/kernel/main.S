@@ -7,9 +7,7 @@
 _kernel_64start:
 .global _kernel_64start
 .type _kernel_64start , @function
-	shl $32, %rax
-	add %rbx, %rax
-	mov %rax, %rsp
+	mov $__kernel_stack, %rsp
 	call kernel_main
 cycle:
 	cli

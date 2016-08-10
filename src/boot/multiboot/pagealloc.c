@@ -65,7 +65,7 @@ bool virt_init() {
 	// map first 4GB indetity-mapped
 	uint64_t *pdp = (uint64_t*) alloc_zeroes();
 	for (int i = 0; i < 4; i++) {
-		pdp[i] = (i << 31) | PAGE_SIZE_BIT | PAGE_PRESENT | PAGE_ALLOW_WRITE;
+		pdp[i] = (i << 30) | PAGE_SIZE_BIT | PAGE_PRESENT | PAGE_ALLOW_WRITE;
 	}
 	
 	pml4e[0] = ((uint64_t)(uint32_t) pdp) | PAGE_PRESENT;
